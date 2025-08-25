@@ -1,0 +1,29 @@
+{
+  "name": "idr-document-generator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/main.ts",
+    "config": "ts-node src/main.ts config", 
+    "doc-only": "ts-node src/main.ts doc-only",
+    "dev": "ts-node --watch src/main.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@azure/arm-appservice": "^17.0.0",
+    "@azure/arm-monitor": "^7.0.0",
+    "@azure/arm-rediscache": "^8.2.0",
+    "@azure/arm-security": "^5.0.0",
+    "@azure/arm-sql": "^10.0.0",
+    "@azure/arm-storage": "^18.6.0",
+    "@azure/identity": "^4.11.1",
+    "docx": "^9.5.1",
+    "dotenv": "^17.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}

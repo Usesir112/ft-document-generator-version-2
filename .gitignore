@@ -14,8 +14,7 @@ yarn-error.log*
 .env.production.local
 
 # Output files (regenerated each run)
-output/
-*.json
+output/*.json
 
 # Generated documents
 *.docx
