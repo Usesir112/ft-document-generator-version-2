@@ -1,4 +1,5 @@
-// config.ts - Single configuration file for the entire project
+// MODIFIED FILE: src/config.ts
+// Enhanced configuration file for the entire project with full document support
 import { ProjectConfig } from './types'; 
 
 // 🎯 MAIN CONFIGURATION - CHANGE THESE VALUES FOR YOUR PROJECT
@@ -23,15 +24,25 @@ export const CONFIG: ProjectConfig = {
     
     // 📋 Manual Document Sections (only used if useAutoDiscovery = false)
     documentSections: [
-        { filename: 'web-server-data.json', title: 'Web Server Specification', sectionNumber: '2.2.1', enabled: true },
-        { filename: 'database-data.json', title: 'SQL Azure Database Specification', sectionNumber: '2.2.2', enabled: true },
-        { filename: 'redis-data.json', title: 'Redis Cache Specification', sectionNumber: '2.2.3', enabled: true },
-        { filename: 'storage-data.json', title: 'Azure Storage Specification', sectionNumber: '2.2.4', enabled: true },
-        { filename: 'alert-data.json', title: 'Performance Monitoring', sectionNumber: '2.2.6', enabled: true },
+        { filename: 'web-server-data.json', title: 'Web Server Specification', sectionNumber: '3.1', enabled: true },
+        { filename: 'database-data.json', title: 'SQL Azure Database Specification', sectionNumber: '3.2', enabled: true },
+        { filename: 'redis-data.json', title: 'Redis Cache Specification', sectionNumber: '3.3', enabled: true },
+        { filename: 'storage-data.json', title: 'Azure Storage Specification', sectionNumber: '3.4', enabled: true },
+        { filename: 'alert-data.json', title: 'Performance Monitoring', sectionNumber: '3.5', enabled: true },
         // 🆕 Add new sections here as needed
-        // { filename: 'sendgrid-data.json', title: 'SendGrid Email Delivery', sectionNumber: '2.2.5', enabled: true },
-        // { filename: 'cosmosdb-data.json', title: 'Cosmos DB Configuration', sectionNumber: '2.2.7', enabled: true },
-    ]
+        // { filename: 'sendgrid-data.json', title: 'SendGrid Email Delivery', sectionNumber: '3.6', enabled: true },
+        // { filename: 'cosmosdb-data.json', title: 'Cosmos DB Configuration', sectionNumber: '3.7', enabled: true },
+    ],
+    
+    // 🎨 NEW: Document customization options
+    documentCustomization: {
+        companyLogoPath: 'src/assets/images/batchline-logo.png', // Path to company logo image file (optional)
+        architectureDiagramPath: 'src/assets/images/overview_bl.png', // Path to architecture diagram (optional)
+        includeGlossary: true,
+        includeReferences: true,
+        customGlossaryItems: [], // Additional glossary items
+        customReferences: [], // Additional references
+    }
 };
 
 // 🤖 AUTO-GENERATED RESOURCE NAMES (Don't change these functions)
@@ -77,6 +88,20 @@ export function getDocumentTitle(): string {
     return CONFIG.documentTitle;
 }
 
+// 🎨 Get document customization options
+export function getDocumentCustomization() {
+    return CONFIG.documentCustomization;
+}
+
+// 📝 Get document purpose description
+export function getDocumentPurpose(): string {
+    const envDescription = CONFIG.environment === 'test' ? 'testing and validation' : 
+                          CONFIG.environment === 'staging' ? 'staging and pre-production testing' :
+                          CONFIG.environment === 'production' ? 'production operations' :
+                          'development and testing';
+    
+    return `${envDescription} during product ${CONFIG.environment === 'production' ? 'deployment' : 'qualification'}`;
+}
 
 // 🔍 Helper function to check if a section is enabled
 export function isSectionEnabled(filename: string): boolean {
@@ -105,6 +130,8 @@ export function displayCurrentConfig(): void {
     
     console.log(`📄 Document: ${CONFIG.outputFilename}`);
     console.log(`🔧 Auto-Discovery Mode: ${CONFIG.useAutoDiscovery ? 'ON' : 'OFF'}`);
+    console.log(`📖 Include Glossary: ${CONFIG.documentCustomization.includeGlossary ? 'YES' : 'NO'}`);
+    console.log(`📚 Include References: ${CONFIG.documentCustomization.includeReferences ? 'YES' : 'NO'}`);
     
     if (!CONFIG.useAutoDiscovery) {
         const enabledSections = CONFIG.documentSections.filter(s => s.enabled);

@@ -2,12 +2,17 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-import { fetchAndSaveWebServerDetails } from './data-fetchers/web-server';
-import { fetchAndSaveSqlDatabaseDetails } from './data-fetchers/database';
-import { fetchAndSaveRedisDetails } from './data-fetchers/redis';
-import { fetchAndSaveStorageDetails } from './data-fetchers/storage';
-import { fetchAndSaveAlertDetails } from './data-fetchers/alert';
+// Import data fetchers from azure cloud providers
+import { fetchAndSaveWebServerDetails } from './data-fetchers/azure/00-web-server';
+import { fetchAndSaveSqlDatabaseDetails } from './data-fetchers/azure/01-database';
+import { fetchAndSaveStorageDetails } from './data-fetchers/azure/02-storage';
+import { fetchAndSaveRedisDetails } from './data-fetchers/azure/03-redis';
+import { fetchAndSaveAlertDetails } from './data-fetchers/azure/04-alert';
+
+// Import document generator
 import { generateDocument } from './doc-generators/document-generator';
+
+// Import configuration
 import { getResourceNames, displayCurrentConfig, CONFIG } from './config';
 
 async function main() {

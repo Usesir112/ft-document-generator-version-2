@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/main.ts",
-    "config": "ts-node src/main.ts config", 
+    "config": "ts-node src/main.ts config",
     "doc-only": "ts-node src/main.ts doc-only",
     "dev": "ts-node --watch src/main.ts",
     "build": "tsc"

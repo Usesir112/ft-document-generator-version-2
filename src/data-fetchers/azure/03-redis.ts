@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { RedisManagementClient } from "@azure/arm-rediscache";
 import { MonitorClient } from "@azure/arm-monitor";
 import { DefaultAzureCredential } from "@azure/identity";
-import { SpecificationData } from "../types";
+import { SpecificationData } from "../../types";
 import * as fs from 'fs';
 
 /**
