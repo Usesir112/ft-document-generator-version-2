@@ -175,7 +175,7 @@ npm install
 export const CONFIG: ProjectConfig = {
     // Project Information
     projectName: 'Orbia Test Environment',
-    clientName: 'Orbia',
+    siteName: 'Orbia',
     environment: 'test',
     
     // 🔧 MAIN SETTING: Change this and everything else auto-generates!
@@ -202,10 +202,10 @@ export const CONFIG: ProjectConfig = {
 
 Create `.env` file:
 ```bash
-AZURE_SUBSCRIPTION_ID=your-subscription-id
-AZURE_CLIENT_ID=your-client-id       # For service principal
-AZURE_CLIENT_SECRET=your-secret       # For service principal  
-AZURE_TENANT_ID=your-tenant-id        # For service principal
+azure_subscription_id=your-subscription-id
+azure_client_id=your-client-id       # For service principal
+azure_client_client_secret=your-secret       # For service principal  
+azure_tenant_id=your-tenant-id        # For service principal
 ```
 
 **Step 3: Run!**

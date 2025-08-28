@@ -33,7 +33,7 @@ import { CONFIG } from '../config';
  * Orchestrates all sections to create complete IDS document
  */
 export function generateDocument(): void {
-    console.log(`📊 Generating complete IDS document: ${CONFIG.documentTitle}`);
+    console.log(`📊 Generating complete IDS document: ${CONFIG.documentType}`);
     
     // Load specification data
     const loadedData = loadDataFiles();

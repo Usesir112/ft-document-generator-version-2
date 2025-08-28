@@ -1,23 +1,28 @@
 // MODIFIED FILE: src/config.ts
 // Enhanced configuration file for the entire project with full document support
-import { ProjectConfig } from './types'; 
+import { ProjectConfig } from './types';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load environment variables at the very top
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // 🎯 MAIN CONFIGURATION - CHANGE THESE VALUES FOR YOUR PROJECT
 export const CONFIG: ProjectConfig = {
     // Product Information
-    productName: 'BatchLine',
-    version: '1.0.0',
+    productName: process.env.product_name || 'default-product',
+    version: process.env.version || '1.0.0',
 
     // Project Information
-    clientName: 'Orbia',
-    environment: 'test',
+    siteName: process.env.site_name || 'default-site',
+    environment: process.env.env_name || 'development',
     
     // 🔧 MAIN SETTING: Change this base name and everything else is auto-generated
-    baseResourceName: 'batchline-orbia-test',
+    baseResourceName: `${(process.env.product_name)}-${(process.env.site_name)}-${(process.env.env_name)}`.toLowerCase(),
     
     // Document Settings
-    documentTitle: 'Infrastructure Design Reports (IDR)',
-    outputFilename: 'orbia_test_infrastructure_report.docx',
+    documentType: process.env.documentType || 'Specification',
+    outputFilename: `${(process.env.product_name)}-${(process.env.site_name)}-${(process.env.env_name)}-${process.env.documentType}-report.docx`.toLowerCase(),
     
     // 📊 Document Generation Mode
     useAutoDiscovery: false, // Set to true to automatically include all *-data.json files
@@ -74,8 +79,8 @@ export function getVersion(): string {
 }
 
 // 📄 Get client name
-export function getClientName(): string {
-    return CONFIG.clientName;
+export function getsiteName(): string {
+    return CONFIG.siteName;
 }
 
 // 📄 Get environment
@@ -84,8 +89,8 @@ export function getEnvironment(): string {
 }
 
 // 📄 Get document title
-export function getDocumentTitle(): string {
-    return CONFIG.documentTitle;
+export function getdocumentType(): string {
+    return CONFIG.documentType;
 }
 
 // 🎨 Get document customization options
@@ -115,7 +120,7 @@ export function isSectionEnabled(filename: string): boolean {
 export function displayCurrentConfig(): void {
     console.log('🎯 Current Project Configuration:');
     console.log(`   Project: ${CONFIG.productName}`);
-    console.log(`   Client: ${CONFIG.clientName}`);
+    console.log(`   Client: ${CONFIG.siteName}`);
     console.log(`   Environment: ${CONFIG.environment}`);
     console.log(`   Version: ${CONFIG.version}`);
     console.log(`   Base Resource Name: ${CONFIG.baseResourceName}`);

@@ -89,10 +89,10 @@ export const CONFIG: ProjectConfig = {
 
 ```typescript
 export const CONFIG: ProjectConfig = {
-    documentTitle: 'Infrastructure Acceptance Testing (IAT)',
+    documentType: 'Infrastructure Acceptance Testing (IAT)',
     outputFilename: 'infrastructure_report.docx',
     projectName: 'My Project',
-    clientName: 'Client Name',
+    siteName: 'Client Name',
     environment: 'production',
 };
 ```
@@ -511,7 +511,7 @@ for (const env of environments) {
   const config = {
     ...CONFIG,
     outputFilename: `${env}_infrastructure_report.docx`,
-    documentTitle: `${env.toUpperCase()} Infrastructure Report`
+    documentType: `${env.toUpperCase()} Infrastructure Report`
   };
   
   await generateDocumentFromConfig(config);
@@ -524,7 +524,7 @@ for (const env of environments) {
 // Modify document styling and structure
 const customConfig = {
   ...CONFIG,
-  documentTitle: 'Security Compliance Report',
+  documentType: 'Security Compliance Report',
   documentSections: [
     { filename: 'security-data.json', title: 'Security Controls', sectionNumber: '1.1', enabled: true },
     { filename: 'compliance-data.json', title: 'Compliance Status', sectionNumber: '1.2', enabled: true },

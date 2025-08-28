@@ -41,14 +41,14 @@ export interface ProjectConfig {
     version: string; // e.g., '1.0.0'
     
     // Project Information
-    clientName: string;
+    siteName: string;
     environment: string; // 'test', 'staging', 'production', etc.
     
     // Azure Resource Base Name - all other names will be auto-generated from this
     baseResourceName: string;
     
     // Document Settings
-    documentTitle: string;
+    documentType: string;
     outputFilename: string;
     useAutoDiscovery: boolean; // true = auto-discover all JSON files, false = use manual sections
     

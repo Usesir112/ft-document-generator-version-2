@@ -17,7 +17,7 @@ import {
 } from 'docx';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getProductName, getVersion, getDocumentTitle, getDocumentCustomization } from '../../config';
+import { getProductName, getVersion, getdocumentType, getDocumentCustomization } from '../../config';
 
 /**
  * Generate document header for all pages except title page
@@ -77,7 +77,7 @@ export function generateDocumentHeader(): Header {
                                     new Paragraph({
                                         children: [
                                             new TextRun({
-                                                text: `${getDocumentTitle()} for ${getProductName()} Version ${getVersion()}`,
+                                                text: `${getdocumentType()} for ${getProductName()} Version ${getVersion()}`,
                                                 size: 20, // 10pt font size (20 = 10pt * 2)
                                                 bold: true,
                                             }),
@@ -231,7 +231,7 @@ export function generateCustomDocumentHeader(options: {
                                     new Paragraph({
                                         children: [
                                             new TextRun({
-                                                text: `${getDocumentTitle()} for ${getProductName()} Version ${getVersion()}`,
+                                                text: `${getdocumentType()} for ${getProductName()} Version ${getVersion()}`,
                                                 size: 20,
                                                 bold: true,
                                             }),

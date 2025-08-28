@@ -5,7 +5,7 @@
 
 import { Table, TableRow, TableCell, Paragraph, WidthType, ShadingType, BorderStyle } from 'docx';
 import { SpecificationData } from '../../types';
-import { getProductName, getClientName, getVersion } from '../../config';
+import { getProductName, getsiteName, getVersion } from '../../config';
 
 /**
  * Creates a professional specification table with 3 columns: Section | Specification | Value
@@ -139,7 +139,7 @@ export function generateSpecificationTable(data: SpecificationData | null): Tabl
 export function generateClientSpecificationTable(): Table {
     const clientSpecs = [
         { 
-            clientName: getClientName(), 
+            siteName: getsiteName(), 
             os: "Windows, macOS", 
             browser: "Google Chrome, Microsoft Edge, Firefox", 
             version: getVersion() 
@@ -203,7 +203,7 @@ export function generateClientSpecificationTable(): Table {
         new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph(spec.clientName)],
+                    children: [new Paragraph(spec.siteName)],
                     margins: { top: 100, bottom: 100, left: 100, right: 100 },
                     borders: {
                         top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },

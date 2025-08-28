@@ -90,9 +90,9 @@ export async function fetchAndSaveAlertDetails(
         console.log(`📡 Fetching Alert configurations...`);
         
         // Initialize Azure clients
-        const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
+        const subscriptionId = process.env.azure_subscription_id;
         if (!subscriptionId) {
-            throw new Error('AZURE_SUBSCRIPTION_ID environment variable is not set');
+            throw new Error('azure_subscription_id environment variable is not set');
         }
 
         const credential = new DefaultAzureCredential();

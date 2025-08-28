@@ -4,7 +4,7 @@
  */
 
 import { Paragraph, TextRun, AlignmentType, BorderStyle, ImageRun} from 'docx';
-import { getProductName, getDocumentTitle, getVersion, getClientName, getEnvironment, getDocumentCustomization } from '../../config';
+import { getProductName, getdocumentType, getVersion, getsiteName, getEnvironment, getDocumentCustomization } from '../../config';
 import * as fs from 'fs';
 /**
  * Generate professional title page
@@ -57,7 +57,7 @@ export function generateTitlePage(): Paragraph[] {
         new Paragraph({ 
             children: [
                 new TextRun({
-                    text: getDocumentTitle().toUpperCase(),
+                    text: getdocumentType().toUpperCase(),
                     bold: true,
                     size: 48 // 24pt
                 })
@@ -83,7 +83,7 @@ export function generateTitlePage(): Paragraph[] {
         new Paragraph({ 
             children: [
                 new TextRun({
-                    text: `${getClientName()} - ${getEnvironment().charAt(0).toUpperCase() + getEnvironment().slice(1)} Environment`,
+                    text: `${getsiteName()} - ${getEnvironment().charAt(0).toUpperCase() + getEnvironment().slice(1)} Environment`,
                     bold: true,
                     size: 36 // 14pt
                 })
