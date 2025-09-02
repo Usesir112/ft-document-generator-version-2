@@ -7,6 +7,16 @@ import * as path from 'path';
 // Load environment variables at the very top
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+// 🧹 Helper function to sanitize strings for filenames
+const sanitizeForFilename = (str: string): string => {
+    return (str || '')
+        .replace(/\s+/g, '-')           // Replace spaces with hyphens
+        .replace(/[()[\]{}]/g, '')      // Remove brackets and parentheses
+        .replace(/[<>:"/\\|?*]/g, '')   // Remove invalid filename characters
+        .replace(/-+/g, '-')            // Replace multiple hyphens with single hyphen
+        .replace(/^-+|-+$/g, '');       // Remove leading/trailing hyphens
+};
+
 // 🎯 MAIN CONFIGURATION - CHANGE THESE VALUES FOR YOUR PROJECT
 export const CONFIG: ProjectConfig = {
     // Product Information
@@ -18,11 +28,11 @@ export const CONFIG: ProjectConfig = {
     environment: process.env.env_name || 'development',
     
     // 🔧 MAIN SETTING: Change this base name and everything else is auto-generated
-    baseResourceName: `${(process.env.product_name)}-${(process.env.site_name)}-${(process.env.env_name)}`.toLowerCase(),
+    baseResourceName: `${sanitizeForFilename(process.env.product_name || '')}-${sanitizeForFilename(process.env.site_name || '')}-${sanitizeForFilename(process.env.env_name || '')}`.toLowerCase(),
     
     // Document Settings
     documentType: process.env.documentType || 'Specification',
-    outputFilename: `${(process.env.product_name)}-${(process.env.site_name)}-${(process.env.env_name)}-${process.env.documentType}-report.docx`.toLowerCase(),
+    outputFilename: `${sanitizeForFilename(process.env.product_name || '')}-${sanitizeForFilename(process.env.site_name || '')}-${sanitizeForFilename(process.env.env_name || '')}-${sanitizeForFilename(process.env.documentType || '')}-report.docx`.toLowerCase(),
     
     // 📊 Document Generation Mode
     useAutoDiscovery: false, // Set to true to automatically include all *-data.json files
