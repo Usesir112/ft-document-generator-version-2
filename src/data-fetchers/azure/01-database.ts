@@ -9,7 +9,7 @@ import { SqlManagementClient } from "@azure/arm-sql";
 import { MonitorClient } from "@azure/arm-monitor";
 import { SecurityCenter } from "@azure/arm-security";
 import { DefaultAzureCredential } from "@azure/identity";
-import { SpecificationData } from "../types";
+import { SpecificationData } from "../../types";
 import * as fs from 'fs';
 
 /**

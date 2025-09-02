@@ -7,7 +7,7 @@ import { WebSiteManagementClient } from "@azure/arm-appservice";
 import { SqlManagementClient } from "@azure/arm-sql";
 import { RedisManagementClient } from "@azure/arm-rediscache";
 import { DefaultAzureCredential } from "@azure/identity";
-import { SpecificationData } from "../types";
+import { SpecificationData } from "../../types";
 import * as fs from 'fs';
 
 /**
