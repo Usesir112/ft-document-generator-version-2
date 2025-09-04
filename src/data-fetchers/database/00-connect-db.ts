@@ -6,6 +6,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 import { SqlManagementClient } from "@azure/arm-sql";
 import { DefaultAzureCredential } from "@azure/identity";
+import { getResourceNames } from '../../config';
 import * as sql from 'mssql';
 
 /**
@@ -37,10 +38,10 @@ export class DatabaseConnectionManager {
     constructor() {
         // Validate required environment variables
         const requiredEnvVars = {
-            server: process.env.DB_SERVER,
-            database: process.env.DB_NAME,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD
+            server: getResourceNames().sqlServerName,
+            database: getResourceNames().sqlDatabaseName,
+            user: process.env.db_user,
+            password: process.env.db_password
         };
 
         // Check for missing environment variables
@@ -53,18 +54,18 @@ export class DatabaseConnectionManager {
         }
 
         this.config = {
-            server: process.env.DB_SERVER!,
-            port: parseInt(process.env.DB_PORT || '1433'),
-            database: process.env.DB_NAME!,
-            user: process.env.DB_USER!,
-            password: process.env.DB_PASSWORD!,
+            server: getResourceNames().sqlServerName,
+            port: parseInt(process.env.db_port || '1433'),
+            database: getResourceNames().sqlDatabaseName,
+            user: process.env.db_user!,
+            password: process.env.db_password!,
             options: {
                 encrypt: true,
                 trustServerCertificate: false,
                 enableArithAbort: true,
             },
-            connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || '30000'),
-            requestTimeout: parseInt(process.env.DB_REQUEST_TIMEOUT || '30000'),
+            connectionTimeout: parseInt(process.env.db_connection_timeout || '30000'),
+            requestTimeout: parseInt(process.env.db_request_timeout || '30000'),
         };
     }
 
@@ -126,8 +127,8 @@ export class DatabaseConnectionManager {
             
             // Create a unique rule name based on current timestamp
             const ruleName = `AutoRule-CAT-${Date.now()}`;
-            const resourceGroupName = 'batchline-orbia-test';
-            const serverName = 'batchline-orbia-test';
+            const resourceGroupName = getResourceNames().resourceGroupName;
+            const serverName = getResourceNames().sqlServerName;
             
             // Check if a rule for this IP already exists
             let existingRule = null;
@@ -178,8 +179,8 @@ export class DatabaseConnectionManager {
             const credential = new DefaultAzureCredential();
             const sqlClient = new SqlManagementClient(credential, subscriptionId);
             
-            const resourceGroupName = 'batchline-orbia-test';
-            const serverName = 'batchline-orbia-test';
+            const resourceGroupName = getResourceNames().resourceGroupName;
+            const serverName = getResourceNames().sqlServerName;
             
             const firewallRules = sqlClient.firewallRules.listByServer(resourceGroupName, serverName);
             const currentTime = Date.now();
