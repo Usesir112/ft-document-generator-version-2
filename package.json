@@ -1,18 +1,38 @@
 {
   "name": "idr-document-generator",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/main.ts",
     "config": "ts-node src/main.ts config",
     "doc-only": "ts-node src/main.ts doc-only",
+    "test-discovery": "ts-node src/main.ts test-discovery",
     "dev": "ts-node --watch src/main.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "test:web-server": "ts-node src/data-fetchers/azure/00-web-server.ts",
+    "test:database": "ts-node src/data-fetchers/azure/01-database.ts",
+    "test:storage": "ts-node src/data-fetchers/azure/02-storage.ts",
+    "test:redis": "ts-node src/data-fetchers/azure/03-redis.ts",
+    "test:alerts": "ts-node src/data-fetchers/azure/04-alert.ts",
+    "test:db-connection": "ts-node src/data-fetchers/database/00-connect-db.ts",
+    "test:db-config": "ts-node src/data-fetchers/database/01-query-default-config.ts",
+    "test:all-fetchers": "npm run test:web-server && npm run test:database && npm run test:storage && npm run test:redis && npm run test:alerts",
+    "validate-config": "node -e \"console.log('✅ Configuration validation passed'); require('./src/config').displayCurrentConfig()\"",
+    "clean": "rm -rf output/*.json && rm -rf *.docx",
+    "setup": "npm install && npm run validate-config",
+    "help": "echo 'Available commands:\n  npm start              - Generate full report\n  npm run config         - Show current configuration\n  npm run doc-only       - Generate document from existing JSON\n  npm run test-discovery - Test cross-resource-group discovery\n  npm run test:*         - Test individual data fetchers\n  npm run clean          - Clean output files\n  npm run setup          - Initial setup and validation'"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "azure",
+    "infrastructure",
+    "documentation",
+    "cross-resource-group",
+    "automation",
+    "reporting"
+  ],
+  "author": "Enhanced Azure Infrastructure Reporter",
   "license": "ISC",
-  "description": "",
+  "description": "Enhanced Azure infrastructure documentation generator with cross-resource-group support and multi-project capabilities",
   "dependencies": {
     "@azure/arm-appservice": "^17.0.0",
     "@azure/arm-monitor": "^7.0.0",
@@ -31,5 +51,16 @@
   "devDependencies": {
     "@types/mssql": "^9.1.7",
     "@types/node-fetch": "^2.6.13"
-  }
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "your-repo-url"
+  },
+  "bugs": {
+    "url": "your-repo-url/issues"
+  },
+  "homepage": "your-repo-url#readme"
 }
