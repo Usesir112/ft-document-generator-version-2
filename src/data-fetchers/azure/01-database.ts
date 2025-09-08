@@ -1,4 +1,4 @@
-// src/data-fetchers/database.ts - Simplified Database Data Fetcher
+// ENHANCED FILE: src/data-fetchers/azure/01-database.ts - Cross-resource-group support
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -13,18 +13,21 @@ import { SpecificationData } from "../../types";
 import * as fs from 'fs';
 
 /**
- * Fetches and saves all relevant details for a given Azure SQL Database.
- * @param resourceGroupName The name of the resource group.
- * @param serverName The name of the SQL Server.
- * @param databaseName The name of the database.
+ * Enhanced function to fetch and save SQL database details with cross-resource-group support
+ * @param sqlResourceGroupName The resource group containing the SQL Server and Database
+ * @param serverName The name of the SQL Server
+ * @param databaseName The name of the database
  */
 export async function fetchAndSaveSqlDatabaseDetails(
-    resourceGroupName: string, 
+    sqlResourceGroupName: string, 
     serverName: string, 
     databaseName: string
 ): Promise<void> {
     try {
         console.log(`📡 Fetching SQL Database details for ${databaseName}...`);
+        console.log(`   SQL Resource Group: ${sqlResourceGroupName}`);
+        console.log(`   SQL Server: ${serverName}`);
+        console.log(`   Database: ${databaseName}`);
 
         // Initialize Azure clients
         const subscriptionId = process.env.azure_subscription_id;
@@ -37,18 +40,18 @@ export async function fetchAndSaveSqlDatabaseDetails(
         const monitorClient = new MonitorClient(credential, subscriptionId);
         const securityClient = new SecurityCenter(credential, subscriptionId);
 
-        // --- PRIMARY DATA FETCHING ---
-        console.log(`📋 Getting database and server information...`);
-        const db = await sqlClient.databases.get(resourceGroupName, serverName, databaseName);
-        const server = await sqlClient.servers.get(resourceGroupName, serverName);
-        const tde = await sqlClient.transparentDataEncryptions.get(resourceGroupName, serverName, databaseName, "current");
-        const retentionPolicy = await sqlClient.backupShortTermRetentionPolicies.get(resourceGroupName, serverName, databaseName, "default");
+        // --- PRIMARY DATA FETCHING WITH CROSS-RESOURCE-GROUP SUPPORT ---
+        console.log(`📋 Getting database and server information from ${sqlResourceGroupName}...`);
+        const db = await sqlClient.databases.get(sqlResourceGroupName, serverName, databaseName);
+        const server = await sqlClient.servers.get(sqlResourceGroupName, serverName);
+        const tde = await sqlClient.transparentDataEncryptions.get(sqlResourceGroupName, serverName, databaseName, "current");
+        const retentionPolicy = await sqlClient.backupShortTermRetentionPolicies.get(sqlResourceGroupName, serverName, databaseName, "default");
 
         // Fetch server auditing settings
         console.log(`🔍 Checking auditing settings...`);
         let serverAuditingSettings;
         try {
-            serverAuditingSettings = await sqlClient.serverBlobAuditingPolicies.get(resourceGroupName, serverName);
+            serverAuditingSettings = await sqlClient.serverBlobAuditingPolicies.get(sqlResourceGroupName, serverName);
         } catch (error) {
             console.warn('⚠️  Could not fetch server auditing settings:', error);
         }
@@ -56,7 +59,7 @@ export async function fetchAndSaveSqlDatabaseDetails(
         // Fetch database auditing settings
         let databaseAuditingSettings;
         try {
-            databaseAuditingSettings = await sqlClient.databaseBlobAuditingPolicies.get(resourceGroupName, serverName, databaseName);
+            databaseAuditingSettings = await sqlClient.databaseBlobAuditingPolicies.get(sqlResourceGroupName, serverName, databaseName);
         } catch (error) {
             console.warn('⚠️  Could not fetch database auditing settings:', error);
         }
@@ -65,7 +68,7 @@ export async function fetchAndSaveSqlDatabaseDetails(
         console.log(`🔒 Checking firewall rules...`);
         let firewallRules = [];
         try {
-            const firewallRulesIterator = sqlClient.firewallRules.listByServer(resourceGroupName, serverName);
+            const firewallRulesIterator = sqlClient.firewallRules.listByServer(sqlResourceGroupName, serverName);
             for await (const rule of firewallRulesIterator) {
                 firewallRules.push(rule);
             }
@@ -77,7 +80,7 @@ export async function fetchAndSaveSqlDatabaseDetails(
         console.log(`🌍 Checking geo-replication...`);
         let replicationLinks = [];
         try {
-            const replicationLinksIterator = sqlClient.replicationLinks.listByDatabase(resourceGroupName, serverName, databaseName);
+            const replicationLinksIterator = sqlClient.replicationLinks.listByDatabase(sqlResourceGroupName, serverName, databaseName);
             for await (const link of replicationLinksIterator) {
                 replicationLinks.push(link);
             }
@@ -172,6 +175,7 @@ export async function fetchAndSaveSqlDatabaseDetails(
 
         // --- SUMMARY LOGGING ---
         console.log(`📈 Database Configuration Summary:`);
+        console.log(`   SQL Resource Group: ${sqlResourceGroupName}`);
         console.log(`   Database SKU: ${db.currentSku?.name} (${computeValue})`);
         console.log(`   TDE Status: ${tde.state}`);
         console.log(`   Auditing: ${auditingValue}`);
@@ -180,7 +184,7 @@ export async function fetchAndSaveSqlDatabaseDetails(
         console.log(`   Diagnostic Settings: ${diagnosticSettingsValue}`);
         console.log(`   Defender Status: ${defenderStatus}`);
 
-        // --- DATA ASSEMBLY ---
+        // --- DATA ASSEMBLY WITH CROSS-RG INFORMATION ---
         const data: SpecificationData = [
             { section: 'General', title: 'Number of DTUs', value: computeValue },
             { section: 'Configuration', title: 'Geo-Replication', value: geoReplicationValue },
@@ -206,6 +210,7 @@ export async function fetchAndSaveSqlDatabaseDetails(
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         
         console.log(`✅ Database data saved to ${filePath}`);
+        console.log(`🗄️ Cross-resource-group SQL configuration handled successfully!`);
 
     } catch (error) {
         console.error(`❌ Error fetching SQL Database details for ${databaseName}:`, error);
@@ -213,29 +218,25 @@ export async function fetchAndSaveSqlDatabaseDetails(
     }
 }
 
-// 🧪 MANUAL TESTING SECTION
-// This block allows the script to be run directly for testing purposes.
-// Usage: ts-node src/data-fetchers/database.ts
+// 🧪 MANUAL TESTING SECTION with cross-resource-group examples
 if (require.main === module) {
-    console.log('🧪 Running Database Fetcher in Test Mode');
-    console.log('=========================================');
+    console.log('🧪 Running Enhanced Database Fetcher in Test Mode');
+    console.log('=================================================');
     
     (async () => {
-        // Test configurations for different environments
         const testConfigs = [
             {
-                name: "Test Environment Database",
-                resourceGroupName: "batchline-orbia-test",
-                serverName: "batchline-orbia-test",
-                databaseName: "batchline-orbia-test-legacy"
+                name: "SQL in Main Resource Group",
+                sqlResourceGroup: "batchline-unison-main",
+                serverName: "batchline-unison-test",
+                databaseName: "batchline-unison-test-legacy"
             },
-            // 🔧 Uncomment to test production environment
-            // {
-            //     name: "Production Environment Database",
-            //     resourceGroupName: "batchline-orbia-prod",
-            //     serverName: "batchline-orbia-prod",
-            //     databaseName: "batchline-orbia-prod-legacy"
-            // }
+            {
+                name: "SQL in Dedicated Data Resource Group",
+                sqlResourceGroup: "batchline-unison-data",
+                serverName: "batchline-unison-data-server",
+                databaseName: "batchline-unison-test-db"
+            }
         ];
 
         try {
@@ -244,7 +245,7 @@ if (require.main === module) {
                 console.log('─'.repeat(50));
                 
                 await fetchAndSaveSqlDatabaseDetails(
-                    config.resourceGroupName,
+                    config.sqlResourceGroup,
                     config.serverName,
                     config.databaseName
                 );
@@ -254,6 +255,7 @@ if (require.main === module) {
             
             console.log('\n🎉 All test configurations completed successfully!');
             console.log('📁 Check the output/ directory for generated JSON files');
+            console.log('💡 Cross-resource-group SQL support tested and working!');
             
         } catch (error) {
             console.error('\n❌ Test failed:', error);

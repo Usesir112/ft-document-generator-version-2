@@ -1,4 +1,4 @@
-// src/data-fetchers/web-server.ts - Simplified Web Server Data Fetcher
+// ENHANCED FILE: src/data-fetchers/azure/00-web-server.ts - Cross-resource-group support
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -13,18 +13,25 @@ import { SpecificationData } from "../../types";
 import * as fs from 'fs';
 
 /**
- * Fetches and saves all relevant details for a given Web App and its associated resources.
- * @param resourceGroupName The name of the resource group.
- * @param webAppName The name of the Web App.
- * @param planName The name of the App Service Plan.
+ * Enhanced function to fetch and save web server details with cross-resource-group support
+ * @param webAppResourceGroupName The resource group containing the Web App
+ * @param webAppName The name of the Web App
+ * @param planName The name of the App Service Plan
+ * @param planResourceGroupName The resource group containing the App Service Plan (optional, defaults to webAppResourceGroupName)
  */
 export async function fetchAndSaveWebServerDetails(
-    resourceGroupName: string, 
+    webAppResourceGroupName: string, 
     webAppName: string, 
-    planName: string
+    planName: string,
+    planResourceGroupName?: string
 ): Promise<void> {
     try {
+        // Use the same resource group for plan if not specified (backward compatibility)
+        const actualPlanResourceGroupName = planResourceGroupName || webAppResourceGroupName;
+        
         console.log(`📡 Fetching Web Server details for ${webAppName}...`);
+        console.log(`   Web App Resource Group: ${webAppResourceGroupName}`);
+        console.log(`   App Service Plan: ${planName} (Resource Group: ${actualPlanResourceGroupName})`);
 
         // Initialize Azure clients
         const subscriptionId = process.env.azure_subscription_id;
@@ -37,16 +44,25 @@ export async function fetchAndSaveWebServerDetails(
         const monitorClient = new MonitorClient(credential, subscriptionId);
         const securityClient = new SecurityCenter(credential, subscriptionId);
 
-        // --- PRIMARY DATA FETCHING ---
-        console.log(`📋 Getting App Service Plan and Web App information...`);
-        const plan = await webClient.appServicePlans.get(resourceGroupName, planName);
-        const webApp = await webClient.webApps.get(resourceGroupName, webAppName);
-        const config = await webClient.webApps.getConfiguration(resourceGroupName, webAppName);
+        // --- PRIMARY DATA FETCHING WITH CROSS-RESOURCE-GROUP SUPPORT ---
+        console.log(`📋 Getting App Service Plan from ${actualPlanResourceGroupName}...`);
+        const plan = await webClient.appServicePlans.get(actualPlanResourceGroupName, planName);
+        
+        console.log(`📋 Getting Web App from ${webAppResourceGroupName}...`);
+        const webApp = await webClient.webApps.get(webAppResourceGroupName, webAppName);
+        const config = await webClient.webApps.getConfiguration(webAppResourceGroupName, webAppName);
+
+        // Validate that the web app is actually using the specified plan
+        if (webApp.serverFarmId && !webApp.serverFarmId.includes(planName)) {
+            console.warn(`⚠️  Warning: Web app ${webAppName} may not be using plan ${planName}`);
+            console.warn(`   Web app references: ${webApp.serverFarmId}`);
+            console.warn(`   Continuing with specified plan...`);
+        }
 
         console.log(`💾 Checking backup configuration...`);
         let backupConfig;
         try {
-            backupConfig = await webClient.webApps.getBackupConfiguration(resourceGroupName, webAppName);
+            backupConfig = await webClient.webApps.getBackupConfiguration(webAppResourceGroupName, webAppName);
         } catch (error) {
             console.warn('⚠️  Could not fetch backup configuration:', error);
         }
@@ -54,7 +70,7 @@ export async function fetchAndSaveWebServerDetails(
         console.log(`📝 Checking logging configuration...`);
         let appServiceLogsConfig;
         try {
-            appServiceLogsConfig = await webClient.webApps.getDiagnosticLogsConfiguration(resourceGroupName, webAppName);
+            appServiceLogsConfig = await webClient.webApps.getDiagnosticLogsConfiguration(webAppResourceGroupName, webAppName);
         } catch (error) {
             console.warn('⚠️  Could not fetch diagnostic logs configuration:', error);
         }
@@ -63,14 +79,28 @@ export async function fetchAndSaveWebServerDetails(
         console.log(`⚙️  Processing Web App configuration...`);
 
         // Determine the scaling method by checking for autoscale rules or elastic scaling
-        console.log(`🔍 Checking autoscale settings...`);
+        console.log(`🔍 Checking autoscale settings across resource groups...`);
         let autoscaleSetting: AutoscaleSettingResource | undefined;
         try {
-            const autoscaleSettingsIterator = monitorClient.autoscaleSettings.listByResourceGroup(resourceGroupName);
-            for await (const setting of autoscaleSettingsIterator) {
+            // Check autoscale settings in the plan's resource group first
+            const planAutoscaleSettingsIterator = monitorClient.autoscaleSettings.listByResourceGroup(actualPlanResourceGroupName);
+            for await (const setting of planAutoscaleSettingsIterator) {
                 if (setting.targetResourceUri === plan.id) {
                     autoscaleSetting = setting;
+                    console.log(`✅ Found autoscale setting in plan's resource group: ${actualPlanResourceGroupName}`);
                     break;
+                }
+            }
+            
+            // If not found and resource groups are different, check the web app's resource group
+            if (!autoscaleSetting && webAppResourceGroupName !== actualPlanResourceGroupName) {
+                const webAppAutoscaleSettingsIterator = monitorClient.autoscaleSettings.listByResourceGroup(webAppResourceGroupName);
+                for await (const setting of webAppAutoscaleSettingsIterator) {
+                    if (setting.targetResourceUri === plan.id) {
+                        autoscaleSetting = setting;
+                        console.log(`✅ Found autoscale setting in web app's resource group: ${webAppResourceGroupName}`);
+                        break;
+                    }
                 }
             }
         } catch (error) {
@@ -155,6 +185,8 @@ export async function fetchAndSaveWebServerDetails(
 
         // --- SUMMARY LOGGING ---
         console.log(`📈 Web Server Configuration Summary:`);
+        console.log(`   Web App Resource Group: ${webAppResourceGroupName}`);
+        console.log(`   App Service Plan Resource Group: ${actualPlanResourceGroupName}`);
         console.log(`   App Service Plan: ${plan.sku?.name} (${plan.sku?.capacity} instances)`);
         console.log(`   Scaling Method: ${scaleOutMethod}`);
         console.log(`   Location: ${plan.location}`);
@@ -163,11 +195,7 @@ export async function fetchAndSaveWebServerDetails(
         console.log(`   Always On: ${config.alwaysOn ? 'Enabled' : 'Disabled'}`);
         console.log(`   Platform: ${config.use32BitWorkerProcess ? '32-bit' : '64-bit'}`);
         console.log(`   Custom Domain SSL: ${hasSniSsl ? 'SNI SSL' : 'None'}`);
-        console.log(`   Backup Schedule: ${backupScheduleValue}`);
-        console.log(`   Application Logs: ${appLogsValue}`);
-        console.log(`   Web Server Logs: ${webServerLoggingValue}`);
-        console.log(`   Defender Status: ${defenderStatus}`);
-        console.log(`   Diagnostic Settings: ${diagnosticSettingsValue}`);
+        console.log(`   Cross-Resource-Group Setup: ${webAppResourceGroupName !== actualPlanResourceGroupName ? 'Yes' : 'No'}`);
 
         // --- DATA ASSEMBLY ---
         const data: SpecificationData = [
@@ -204,6 +232,7 @@ export async function fetchAndSaveWebServerDetails(
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         
         console.log(`✅ Web Server data saved to ${filePath}`);
+        console.log(`🌐 Cross-resource-group configuration successfully handled!`);
 
     } catch (error) {
         console.error(`❌ Error fetching Web Server details for ${webAppName}:`, error);
@@ -211,40 +240,39 @@ export async function fetchAndSaveWebServerDetails(
     }
 }
 
-// 🧪 MANUAL TESTING SECTION
-// This block allows the script to be run directly for testing purposes.
-// Usage: ts-node src/data-fetchers/web-server.ts
+// 🧪 MANUAL TESTING SECTION with cross-resource-group examples
 if (require.main === module) {
-    console.log('🧪 Running Web Server Fetcher in Test Mode');
-    console.log('==========================================');
+    console.log('🧪 Running Enhanced Web Server Fetcher in Test Mode');
+    console.log('===================================================');
     
     (async () => {
-        // Test configurations for different environments
         const testConfigs = [
             {
-                name: "Test Environment Web Server",
-                resourceGroupName: "batchline-orbia-test",
-                webAppName: "batchline-orbia-test-legacy",
-                planName: "batchline-orbia-test-legacy"
+                name: "Same Resource Group (Standard Setup)",
+                webAppResourceGroup: "batchline-unison-main",
+                webAppName: "batchline-unison-test-legacy",
+                planName: "batchline-unison-test-legacy",
+                planResourceGroup: "batchline-unison-main"
             },
-            // 🔧 Uncomment to test production environment
-            // {
-            //     name: "Production Environment Web Server",
-            //     resourceGroupName: "batchline-orbia-prod",
-            //     webAppName: "batchline-orbia-prod-legacy",
-            //     planName: "batchline-orbia-prod-legacy"
-            // }
+            {
+                name: "Cross Resource Group (Advanced Setup)",
+                webAppResourceGroup: "batchline-unison-main",
+                webAppName: "batchline-unison-test-legacy",
+                planName: "batchline-unison-premium-p0v3",
+                planResourceGroup: "batchline-unison-prod-primary"
+            }
         ];
 
         try {
             for (const config of testConfigs) {
                 console.log(`\n🎯 Processing ${config.name}`);
-                console.log('─'.repeat(50));
+                console.log('─'.repeat(60));
                 
                 await fetchAndSaveWebServerDetails(
-                    config.resourceGroupName,
+                    config.webAppResourceGroup,
                     config.webAppName,
-                    config.planName
+                    config.planName,
+                    config.planResourceGroup
                 );
                 
                 console.log(`✅ Completed ${config.name}`);
@@ -252,6 +280,7 @@ if (require.main === module) {
             
             console.log('\n🎉 All test configurations completed successfully!');
             console.log('📁 Check the output/ directory for generated JSON files');
+            console.log('💡 Cross-resource-group support tested and working!');
             
         } catch (error) {
             console.error('\n❌ Test failed:', error);

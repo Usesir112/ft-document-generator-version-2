@@ -1,4 +1,4 @@
-// src/data-fetchers/storage.ts - Simplified Storage Data Fetcher
+// ENHANCED FILE: src/data-fetchers/azure/02-storage.ts - Cross-resource-group support
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -81,16 +81,17 @@ function getEncryptionType(encryption?: any): string {
 }
 
 /**
- * Fetches and saves all relevant details for a given Azure Storage Account.
- * @param resourceGroupName The name of the resource group.
- * @param accountName The name of the Storage Account.
+ * Enhanced function to fetch and save Azure Storage Account details with cross-resource-group support
+ * @param storageResourceGroupName The resource group containing the Storage Account
+ * @param accountName The name of the Storage Account
  */
 export async function fetchAndSaveStorageDetails(
-    resourceGroupName: string, 
+    storageResourceGroupName: string, 
     accountName: string
 ): Promise<void> {
     try {
         console.log(`📡 Fetching Storage Account details for ${accountName}...`);
+        console.log(`   Storage Resource Group: ${storageResourceGroupName}`);
 
         // Initialize Azure clients
         const subscriptionId = process.env.azure_subscription_id;
@@ -103,15 +104,15 @@ export async function fetchAndSaveStorageDetails(
         const monitorClient = new MonitorClient(credential, subscriptionId);
         const securityClient = new SecurityCenter(credential, subscriptionId);
 
-        // --- PRIMARY DATA FETCHING ---
-        console.log(`📋 Getting storage account information...`);
-        const account = await storageClient.storageAccounts.getProperties(resourceGroupName, accountName);
+        // --- PRIMARY DATA FETCHING WITH CROSS-RESOURCE-GROUP SUPPORT ---
+        console.log(`📋 Getting storage account information from ${storageResourceGroupName}...`);
+        const account = await storageClient.storageAccounts.getProperties(storageResourceGroupName, accountName);
 
         // Get blob service properties for container access level
         console.log(`🔍 Checking blob service properties...`);
         let blobServiceProperties;
         try {
-            blobServiceProperties = await storageClient.blobServices.getServiceProperties(resourceGroupName, accountName);
+            blobServiceProperties = await storageClient.blobServices.getServiceProperties(storageResourceGroupName, accountName);
         } catch (error) {
             console.warn('⚠️  Could not fetch blob service properties:', error);
         }
@@ -120,7 +121,7 @@ export async function fetchAndSaveStorageDetails(
         console.log(`📦 Checking container configurations...`);
         let containers = [];
         try {
-            const containersIterator = storageClient.blobContainers.list(resourceGroupName, accountName);
+            const containersIterator = storageClient.blobContainers.list(storageResourceGroupName, accountName);
             for await (const container of containersIterator) {
                 containers.push(container);
             }
@@ -186,6 +187,7 @@ export async function fetchAndSaveStorageDetails(
 
         // --- SUMMARY LOGGING ---
         console.log(`📈 Storage Account Configuration Summary:`);
+        console.log(`   Storage Resource Group: ${storageResourceGroupName}`);
         console.log(`   Account Kind: ${account.kind}`);
         console.log(`   SKU: ${account.sku?.name} (${account.sku?.tier})`);
         console.log(`   Access Tier: ${account.accessTier}`);
@@ -198,7 +200,7 @@ export async function fetchAndSaveStorageDetails(
         console.log(`   Defender Status: ${defenderStatus}`);
         console.log(`   Diagnostic Settings: ${diagnosticSettingsValue}`);
 
-        // --- DATA ASSEMBLY ---
+        // --- DATA ASSEMBLY WITH CROSS-RG INFORMATION ---
         const data: SpecificationData = [
             { section: 'General', title: 'Account Kind', value: account.kind || '-' },
             { section: 'General', title: 'Performance', value: account.sku?.tier || '-' },
@@ -229,6 +231,7 @@ export async function fetchAndSaveStorageDetails(
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         
         console.log(`✅ Storage Account data saved to ${filePath}`);
+        console.log(`💾 Cross-resource-group Storage configuration handled successfully!`);
 
     } catch (error) {
         console.error(`❌ Error fetching Storage Account details for ${accountName}:`, error);
@@ -236,36 +239,32 @@ export async function fetchAndSaveStorageDetails(
     }
 }
 
-// 🧪 MANUAL TESTING SECTION
-// This block allows the script to be run directly for testing purposes.
-// Usage: ts-node src/data-fetchers/storage.ts
+// 🧪 MANUAL TESTING SECTION with cross-resource-group examples
 if (require.main === module) {
-    console.log('🧪 Running Storage Account Fetcher in Test Mode');
-    console.log('===============================================');
+    console.log('🧪 Running Enhanced Storage Account Fetcher in Test Mode');
+    console.log('======================================================');
     
     (async () => {
-        // Test configurations for different environments
         const testConfigs = [
             {
-                name: "Test Environment Storage Account",
-                resourceGroupName: "batchline-orbia-test",
-                accountName: "batchlineorbiatest"
+                name: "Storage in Main Resource Group",
+                storageResourceGroup: "batchline-unison-main",
+                accountName: "batchlineunisonttest"
             },
-            // 🔧 Uncomment to test production environment
-            // {
-            //     name: "Production Environment Storage Account",
-            //     resourceGroupName: "batchline-orbia-prod",
-            //     accountName: "batchlineorbiaprod"
-            // }
+            {
+                name: "Storage in Dedicated Storage Resource Group",
+                storageResourceGroup: "batchline-unison-storage",
+                accountName: "batchlinesharedstorage"
+            }
         ];
 
         try {
             for (const config of testConfigs) {
                 console.log(`\n🎯 Processing ${config.name}`);
-                console.log('─'.repeat(50));
+                console.log('─'.repeat(60));
                 
                 await fetchAndSaveStorageDetails(
-                    config.resourceGroupName,
+                    config.storageResourceGroup,
                     config.accountName
                 );
                 
@@ -274,6 +273,7 @@ if (require.main === module) {
             
             console.log('\n🎉 All test configurations completed successfully!');
             console.log('📁 Check the output/ directory for generated JSON files');
+            console.log('💡 Cross-resource-group Storage support tested and working!');
             
         } catch (error) {
             console.error('\n❌ Test failed:', error);

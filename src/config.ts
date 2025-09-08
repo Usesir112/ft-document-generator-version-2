@@ -1,6 +1,5 @@
-// SIMPLE SOLUTION: src/config.ts
-// Auto-generates ALL resource names with individual override capability
-
+// ENHANCED FILE: src/config.ts
+// Enhanced configuration file with cross-resource-group support
 import { ProjectConfig } from './types';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -18,7 +17,7 @@ const sanitizeForFilename = (str: string): string => {
         .replace(/^-+|-+$/g, '');       // Remove leading/trailing hyphens
 };
 
-// 🎯 MAIN CONFIGURATION - Only 3 core values needed
+// 🎯 MAIN CONFIGURATION - CHANGE THESE VALUES FOR YOUR PROJECT
 export const CONFIG: ProjectConfig = {
     // Product Information
     productName: process.env.product_name || 'default-product',
@@ -28,64 +27,114 @@ export const CONFIG: ProjectConfig = {
     siteName: process.env.site_name || 'default-site',
     environment: process.env.env_name || 'development',
     
-    // Auto-generated base name for standard pattern
+    // 🔧 MAIN SETTING: Change this base name and everything else is auto-generated
     baseResourceName: `${sanitizeForFilename(process.env.product_name || '')}-${sanitizeForFilename(process.env.site_name || '')}-${sanitizeForFilename(process.env.env_name || '')}`.toLowerCase(),
     
     // Document Settings
     documentType: process.env.documentType || 'Specification',
     outputFilename: `${sanitizeForFilename(process.env.product_name || '')}-${sanitizeForFilename(process.env.site_name || '')}-${sanitizeForFilename(process.env.env_name || '')}-${sanitizeForFilename(process.env.documentType || '')}-report.docx`.toLowerCase(),
     
-    // Document Generation Mode
-    useAutoDiscovery: false,
+    // 📊 Document Generation Mode
+    useAutoDiscovery: false, // Set to true to automatically include all *-data.json files
     
-    // Document Sections
+    // 📋 Manual Document Sections (only used if useAutoDiscovery = false)
     documentSections: [
         { filename: 'web-server-data.json', title: 'Web Server Specification', sectionNumber: '3.1', enabled: true },
         { filename: 'database-data.json', title: 'SQL Azure Database Specification', sectionNumber: '3.2', enabled: true },
         { filename: 'redis-data.json', title: 'Redis Cache Specification', sectionNumber: '3.3', enabled: true },
         { filename: 'storage-data.json', title: 'Azure Storage Specification', sectionNumber: '3.4', enabled: true },
         { filename: 'alert-data.json', title: 'Performance Monitoring', sectionNumber: '3.5', enabled: true },
+        // 🆕 Add new sections here as needed
+        // { filename: 'sendgrid-data.json', title: 'SendGrid Email Delivery', sectionNumber: '3.6', enabled: true },
+        // { filename: 'cosmosdb-data.json', title: 'Cosmos DB Configuration', sectionNumber: '3.7', enabled: true },
     ],
     
-    // Document customization options
+    // 🎨 Document customization options
     documentCustomization: {
-        companyLogoPath: 'src/assets/images/batchline-logo.png',
-        architectureDiagramPath: 'src/assets/images/overview_bl.png',
+        companyLogoPath: 'src/assets/images/batchline-logo.png', // Path to company logo image file (optional)
+        architectureDiagramPath: 'src/assets/images/overview_bl.png', // Path to architecture diagram (optional)
         includeGlossary: true,
         includeReferences: true,
-        customGlossaryItems: [],
-        customReferences: [],
+        customGlossaryItems: [], // Additional glossary items
+        customReferences: [], // Additional references
     }
 };
 
-// 🤖 SIMPLE RESOURCE NAME GENERATION WITH OVERRIDES
-export function getResourceNames() {
-    const base = CONFIG.baseResourceName;
+// 🚀 ENHANCED RESOURCE NAMES WITH CROSS-RESOURCE-GROUP SUPPORT
+export interface ResourceConfiguration {
+    // Primary resource group (fallback for resources that don't specify their own)
+    resourceGroupName: string;
     
-    // 🎯 AUTO-GENERATED DEFAULTS (from product_name-site_name-env_name pattern)
-    const defaults = {
-        resourceGroupName: base,
-        webAppName: `${base}-legacy`,
-        legacyPlanName: `${base}-legacy`,
-        sqlServerName: base,
-        sqlDatabaseName: `${base}-legacy`,
-        redisCacheName: base,
-        storageAccountName: base.replace(/-/g, '').toLowerCase() // Remove hyphens for storage
-    };
+    // Web App resources (might be in different resource groups)
+    webAppName: string;
+    webAppResourceGroup?: string;
+    legacyPlanName: string;
+    appServicePlanResourceGroup?: string;
     
-    // 🚀 OVERRIDE WITH USER VALUES (use exact user input if provided)
-    return {
-        resourceGroupName: process.env.resource_group_name || defaults.resourceGroupName,
-        webAppName: process.env.web_app_name || defaults.webAppName,
-        legacyPlanName: process.env.app_service_plan_name || defaults.legacyPlanName,
-        sqlServerName: process.env.sql_server_name || defaults.sqlServerName,
-        sqlDatabaseName: process.env.sql_database_name || defaults.sqlDatabaseName,
-        redisCacheName: process.env.redis_cache_name || defaults.redisCacheName,
-        storageAccountName: process.env.storage_account_name || defaults.storageAccountName
-    };
+    // SQL resources (might be in different resource groups)
+    sqlServerName: string;
+    sqlServerResourceGroup?: string;
+    sqlDatabaseName: string;
+    
+    // Redis resources (might be in different resource groups)
+    redisCacheName: string;
+    redisCacheResourceGroup?: string;
+    
+    // Storage resources (might be in different resource groups)
+    storageAccountName: string;
+    storageAccountResourceGroup?: string;
 }
 
-// 📄 Export functions (unchanged)
+export function getResourceNames(): ResourceConfiguration {
+    // Get all resource names and resource groups from environment variables
+    const resourceConfig: ResourceConfiguration = {
+        // Primary resource group
+        resourceGroupName: process.env.resource_group_name || CONFIG.baseResourceName,
+        
+        // Web App configuration
+        webAppName: process.env.web_app_name || `${CONFIG.baseResourceName}-legacy`,
+        webAppResourceGroup: process.env.web_app_resource_group,
+        legacyPlanName: process.env.app_service_plan_name || `${CONFIG.baseResourceName}-legacy`,
+        appServicePlanResourceGroup: process.env.app_service_plan_resource_group,
+        
+        // SQL configuration
+        sqlServerName: process.env.sql_server_name || CONFIG.baseResourceName,
+        sqlServerResourceGroup: process.env.sql_server_resource_group,
+        sqlDatabaseName: process.env.sql_database_name || `${CONFIG.baseResourceName}-legacy`,
+        
+        // Redis configuration
+        redisCacheName: process.env.redis_cache_name || CONFIG.baseResourceName,
+        redisCacheResourceGroup: process.env.redis_cache_resource_group,
+        
+        // Storage configuration (remove hyphens for storage account naming requirements)
+        storageAccountName: process.env.storage_account_name || CONFIG.baseResourceName.replace(/-/g, '').toLowerCase(),
+        storageAccountResourceGroup: process.env.storage_account_resource_group,
+    };
+    
+    return resourceConfig;
+}
+
+// Helper function to get the actual resource group for a specific resource
+export function getResourceGroup(resourceType: 'webapp' | 'plan' | 'sql' | 'redis' | 'storage'): string {
+    const config = getResourceNames();
+    
+    switch (resourceType) {
+        case 'webapp':
+            return config.webAppResourceGroup || config.resourceGroupName;
+        case 'plan':
+            return config.appServicePlanResourceGroup || config.resourceGroupName;
+        case 'sql':
+            return config.sqlServerResourceGroup || config.resourceGroupName;
+        case 'redis':
+            return config.redisCacheResourceGroup || config.resourceGroupName;
+        case 'storage':
+            return config.storageAccountResourceGroup || config.resourceGroupName;
+        default:
+            return config.resourceGroupName;
+    }
+}
+
+// 📄 Get product name
 export function getProductName(): string {
     return CONFIG.productName;
 }
@@ -125,6 +174,7 @@ export function getDocumentPurpose(): string {
     return `${envDescription} during product ${CONFIG.environment === 'production' ? 'deployment' : 'qualification'}`;
 }
 
+// 🔍 Helper function to check if a section is enabled
 export function isSectionEnabled(filename: string): boolean {
     if (CONFIG.useAutoDiscovery) return true;
     
@@ -132,46 +182,39 @@ export function isSectionEnabled(filename: string): boolean {
     return section ? section.enabled : false;
 }
 
-// 🆕 SIMPLE CONFIGURATION DISPLAY
+// 📋 Display current configuration (for debugging)
 export function displayCurrentConfig(): void {
     console.log('🎯 Current Project Configuration:');
     console.log(`   Product: ${CONFIG.productName}`);
     console.log(`   Client: ${CONFIG.siteName}`);
     console.log(`   Environment: ${CONFIG.environment}`);
     console.log(`   Version: ${CONFIG.version}`);
+    console.log(`   Base Resource Name: ${CONFIG.baseResourceName}`);
     console.log('');
     
     const resources = getResourceNames();
-    const base = CONFIG.baseResourceName;
+    console.log('📋 Generated Resource Configuration:');
+    console.log(`   Primary Resource Group: ${resources.resourceGroupName}`);
+    console.log('');
+    console.log('🌐 Web App Resources:');
+    console.log(`   Web App: ${resources.webAppName} (RG: ${getResourceGroup('webapp')})`);
+    console.log(`   App Service Plan: ${resources.legacyPlanName} (RG: ${getResourceGroup('plan')})`);
+    console.log('');
+    console.log('🗄️ SQL Resources:');
+    console.log(`   SQL Server: ${resources.sqlServerName} (RG: ${getResourceGroup('sql')})`);
+    console.log(`   SQL Database: ${resources.sqlDatabaseName}`);
+    console.log('');
+    console.log('⚡ Redis Resources:');
+    console.log(`   Redis Cache: ${resources.redisCacheName} (RG: ${getResourceGroup('redis')})`);
+    console.log('');
+    console.log('💾 Storage Resources:');
+    console.log(`   Storage Account: ${resources.storageAccountName} (RG: ${getResourceGroup('storage')})`);
+    console.log('');
     
-    console.log('📋 Generated Resource Names:');
-    console.log('─'.repeat(50));
-    
-    // Show each resource with override status
-    console.log(`🏢 resourceGroupName: ${resources.resourceGroupName} ${process.env.resource_group_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    console.log(`🌐 webAppName: ${resources.webAppName} ${process.env.web_app_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    console.log(`📊 legacyPlanName: ${resources.legacyPlanName} ${process.env.app_service_plan_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    console.log(`🗄️ sqlServerName: ${resources.sqlServerName} ${process.env.sql_server_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    console.log(`💾 sqlDatabaseName: ${resources.sqlDatabaseName} ${process.env.sql_database_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    console.log(`⚡ redisCacheName: ${resources.redisCacheName} ${process.env.redis_cache_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    console.log(`📦 storageAccountName: ${resources.storageAccountName} ${process.env.storage_account_name ? '✅ (overridden)' : '⚙️ (auto-generated)'}`);
-    
-    console.log('\n' + '─'.repeat(50));
     console.log(`📄 Document: ${CONFIG.outputFilename}`);
     console.log(`🔧 Auto-Discovery Mode: ${CONFIG.useAutoDiscovery ? 'ON' : 'OFF'}`);
-    
-    // Show override count
-    const overrideCount = [
-        process.env.resource_group_name,
-        process.env.web_app_name,
-        process.env.app_service_plan_name,
-        process.env.sql_server_name,
-        process.env.sql_database_name,
-        process.env.redis_cache_name,
-        process.env.storage_account_name
-    ].filter(Boolean).length;
-    
-    console.log(`🎛️  Resource Overrides: ${overrideCount}/7`);
+    console.log(`📖 Include Glossary: ${CONFIG.documentCustomization.includeGlossary ? 'YES' : 'NO'}`);
+    console.log(`📚 Include References: ${CONFIG.documentCustomization.includeReferences ? 'YES' : 'NO'}`);
     
     if (!CONFIG.useAutoDiscovery) {
         const enabledSections = CONFIG.documentSections.filter(s => s.enabled);
@@ -180,4 +223,8 @@ export function displayCurrentConfig(): void {
             console.log(`   ${section.sectionNumber} - ${section.title}`);
         });
     }
+    
+    console.log('');
+    console.log('💡 Cross-Resource-Group Support: ENABLED');
+    console.log('   Resources can be discovered across different resource groups automatically');
 }

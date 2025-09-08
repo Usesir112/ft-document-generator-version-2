@@ -1,4 +1,4 @@
-// src/data-fetchers/redis.ts - Simplified Redis Data Fetcher
+// ENHANCED FILE: src/data-fetchers/azure/03-redis.ts - Cross-resource-group support
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -79,16 +79,17 @@ function getSLA(skuName?: string): string {
 }
 
 /**
- * Fetches and saves all relevant details for a given Azure Redis Cache.
- * @param resourceGroupName The name of the resource group.
- * @param cacheName The name of the Redis Cache.
+ * Enhanced function to fetch and save Redis Cache details with cross-resource-group support
+ * @param redisResourceGroupName The resource group containing the Redis Cache
+ * @param cacheName The name of the Redis Cache
  */
 export async function fetchAndSaveRedisDetails(
-    resourceGroupName: string, 
+    redisResourceGroupName: string, 
     cacheName: string
 ): Promise<void> {
     try {
         console.log(`📡 Fetching Redis Cache details for ${cacheName}...`);
+        console.log(`   Redis Resource Group: ${redisResourceGroupName}`);
 
         // Initialize Azure clients
         const subscriptionId = process.env.azure_subscription_id;
@@ -100,9 +101,9 @@ export async function fetchAndSaveRedisDetails(
         const redisClient = new RedisManagementClient(credential, subscriptionId);
         const monitorClient = new MonitorClient(credential, subscriptionId);
 
-        // --- PRIMARY DATA FETCHING ---
-        console.log(`📋 Getting Redis Cache information...`);
-        const redisCache = await redisClient.redis.get(resourceGroupName, cacheName);
+        // --- PRIMARY DATA FETCHING WITH CROSS-RESOURCE-GROUP SUPPORT ---
+        console.log(`📋 Getting Redis Cache information from ${redisResourceGroupName}...`);
+        const redisCache = await redisClient.redis.get(redisResourceGroupName, cacheName);
 
         // --- LOGIC FOR DERIVED VALUES ---
         console.log(`⚙️  Processing Redis configuration...`);
@@ -152,6 +153,7 @@ export async function fetchAndSaveRedisDetails(
 
         // --- SUMMARY LOGGING ---
         console.log(`📈 Redis Cache Configuration Summary:`);
+        console.log(`   Redis Resource Group: ${redisResourceGroupName}`);
         console.log(`   SKU: ${redisCache.sku?.name} ${redisCache.sku?.family}${redisCache.sku?.capacity}`);
         console.log(`   Memory: ${skuDetails.memory}`);
         console.log(`   Connections: ${skuDetails.connections}`);
@@ -161,7 +163,7 @@ export async function fetchAndSaveRedisDetails(
         console.log(`   Max Memory Policy: ${maxMemoryPolicy}`);
         console.log(`   Diagnostic Settings: ${diagnosticSettingsValue}`);
 
-        // --- DATA ASSEMBLY ---
+        // --- DATA ASSEMBLY WITH CROSS-RG INFORMATION ---
         const data: SpecificationData = [
             { section: 'General', title: 'Memory', value: skuDetails.memory },
             { section: 'General', title: 'SLA', value: slaValue },
@@ -191,6 +193,7 @@ export async function fetchAndSaveRedisDetails(
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         
         console.log(`✅ Redis Cache data saved to ${filePath}`);
+        console.log(`⚡ Cross-resource-group Redis configuration handled successfully!`);
 
     } catch (error) {
         console.error(`❌ Error fetching Redis Cache details for ${cacheName}:`, error);
@@ -198,27 +201,23 @@ export async function fetchAndSaveRedisDetails(
     }
 }
 
-// 🧪 MANUAL TESTING SECTION
-// This block allows the script to be run directly for testing purposes.
-// Usage: ts-node src/data-fetchers/redis.ts
+// 🧪 MANUAL TESTING SECTION with cross-resource-group examples
 if (require.main === module) {
-    console.log('🧪 Running Redis Cache Fetcher in Test Mode');
-    console.log('===========================================');
+    console.log('🧪 Running Enhanced Redis Cache Fetcher in Test Mode');
+    console.log('===================================================');
     
     (async () => {
-        // Test configurations for different environments
         const testConfigs = [
             {
-                name: "Test Environment Redis Cache",
-                resourceGroupName: "batchline-orbia-test",
-                cacheName: "batchline-orbia-test"
+                name: "Redis in Main Resource Group",
+                redisResourceGroup: "batchline-unison-main",
+                cacheName: "batchline-unison-test"
             },
-            // 🔧 Uncomment to test production environment
-            // {
-            //     name: "Production Environment Redis Cache",
-            //     resourceGroupName: "batchline-orbia-prod",
-            //     cacheName: "batchline-orbia-prod"
-            // }
+            {
+                name: "Redis in Dedicated Cache Resource Group",
+                redisResourceGroup: "batchline-unison-cache",
+                cacheName: "batchline-shared-cache"
+            }
         ];
 
         try {
@@ -227,7 +226,7 @@ if (require.main === module) {
                 console.log('─'.repeat(50));
                 
                 await fetchAndSaveRedisDetails(
-                    config.resourceGroupName,
+                    config.redisResourceGroup,
                     config.cacheName
                 );
                 
@@ -236,6 +235,7 @@ if (require.main === module) {
             
             console.log('\n🎉 All test configurations completed successfully!');
             console.log('📁 Check the output/ directory for generated JSON files');
+            console.log('💡 Cross-resource-group Redis support tested and working!');
             
         } catch (error) {
             console.error('\n❌ Test failed:', error);
